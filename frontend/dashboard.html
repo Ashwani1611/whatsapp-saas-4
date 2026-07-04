@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reachly — WhatsApp Business Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  :root{
+    --void:#0A0B0F;
+    --void-2:#0D0F16;
+    --surface: rgba(255,255,255,0.035);
+    --surface-solid:#12141C;
+    --surface-hover: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.16);
+    --border-accent: rgba(108,124,255,0.4);
+
+    --text:#F2F3F7;
+    --text-dim:#9498AB;
+    --text-faint:#5C6079;
+
+    --accent:#6C7CFF;
+    --accent-2:#9D6CFF;
+    --accent-glow: rgba(108,124,255,0.45);
+    --gold:#E8B75C;
+    --mint:#3ED8A3;
+    --mint-glow: rgba(62,216,163,0.35);
+    --amber:#F5B94D;
+    --rose:#FF6B7A;
+
+    --r-lg:16px;
+    --r-md:12px;
+    --r-sm:8px;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--void);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .serif{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+  ::selection{ background:var(--accent-glow); color:#fff; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
+  }
+
+  .grain{ position:fixed; inset:0; pointer-events:none; opacity:0.035; z-index:100; mix-blend-mode:overlay; }
+
+  .ticks{ display:inline-flex; align-items:center; }
+  .ticks svg{ width:15px; height:11px; overflow:visible; }
+  .tick-path{ stroke-dasharray:20; stroke-dashoffset:20; animation:draw-tick 0.5s var(--ease) forwards; }
+  .tick-read .tick-path{ stroke:var(--accent); filter:drop-shadow(0 0 4px var(--accent-glow)); }
+  .tick-delivered .tick-path, .tick-sent .tick-path{ stroke:var(--text-faint); }
+  @keyframes draw-tick{ to{ stroke-dashoffset:0; } }
+
+  #login-screen{ min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; background:var(--void); }
+  .orb{ position:absolute; border-radius:50%; filter:blur(90px); opacity:0.5; animation:float 14s ease-in-out infinite; }
+  .orb-1{ width:480px; height:480px; background:radial-gradient(circle, var(--accent), transparent 70%); top:-160px; left:-120px; }
+  .orb-2{ width:420px; height:420px; background:radial-gradient(circle, var(--accent-2), transparent 70%); bottom:-180px; right:-100px; animation-delay:-5s; }
+  .orb-3{ width:280px; height:280px; background:radial-gradient(circle, var(--mint), transparent 70%); top:40%; right:10%; opacity:0.25; animation-delay:-9s; }
+  @keyframes float{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(30px,-40px) scale(1.08); } }
+
+  .login-wrap{ position:relative; z-index:2; display:flex; align-items:center; gap:90px; padding:0 60px; }
+  .login-hero{ max-width:380px; }
+  .login-hero .eyebrow{ font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-faint); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+  .eyebrow .live-dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint-glow); animation:pulse-dot 2s infinite; }
+  @keyframes pulse-dot{ 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+  .login-hero h1{ font-size:44px; font-weight:500; line-height:1.08; letter-spacing:-0.02em; margin-bottom:20px; }
+  .login-hero h1 em{ font-style:italic; background:linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .login-hero p{ font-size:15px; color:var(--text-dim); line-height:1.6; margin-bottom:32px; }
+  .mini-thread{ display:flex; flex-direction:column; gap:8px; opacity:0.9; }
+  .mini-bubble{ font-size:12.5px; padding:8px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--border); max-width:220px; color:var(--text-dim); }
+  .mini-bubble.out{ align-self:flex-end; background:rgba(108,124,255,0.12); border-color:var(--border-accent); color:var(--text); display:flex; align-items:center; gap:6px; justify-content:space-between; }
+
+  .login-card{ width:380px; background:var(--surface); backdrop-filter:blur(24px); border:1px solid var(--border); border-radius:var(--r-lg); padding:38px 34px 30px; box-shadow:0 40px 80px -30px rgba(0,0,0,0.6); }
+  .brand-mark{ width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, var(--accent), var(--accent-2)); display:flex; align-items:center; justify-content:center; margin-bottom:22px; box-shadow:0 8px 20px -6px var(--accent-glow); }
+  .brand-mark svg{ width:18px; height:13px; }
+  .login-card h2{ font-size:22px; font-weight:600; letter-spacing:-0.01em; margin-bottom:6px; }
+  .login-card p.sub{ color:var(--text-dim); font-size:13.5px; margin-bottom:26px; }
+  .field{ margin-bottom:15px; }
+  .field label{ display:block; font-size:11px; font-weight:600; color:var(--text-faint); margin-bottom:7px; text-transform:uppercase; letter-spacing:0.06em; }
+  .field input{ width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:14px; font-family:inherit; background:rgba(255,255,255,0.03); color:var(--text); transition:border-color .2s, background .2s; }
+  .field input::placeholder{ color:var(--text-faint); }
+  .field input:focus{ outline:none; border-color:var(--accent); background:rgba(255,255,255,0.05); }
+  .btn-primary{ width:100%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; padding:12px; border-radius:var(--r-sm); font-weight:600; font-size:14px; margin-top:6px; box-shadow:0 8px 24px -8px var(--accent-glow); transition:transform .2s var(--ease), box-shadow .2s; }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 12px 30px -6px var(--accent-glow); }
+  .btn-primary:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+  .domain-tag{ margin-top:22px; padding-top:18px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-faint); display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono', monospace; }
+  .login-error{ display:none; background:rgba(255,107,122,0.1); border:1px solid rgba(255,107,122,0.3); color:var(--rose); font-size:12.5px; padding:9px 12px; border-radius:8px; margin-bottom:15px; }
+
+  #app-screen{ display:none; min-height:100vh; }
+  .shell{ display:flex; min-height:100vh; }
+
+  .sidebar{ width:240px; background:var(--void-2); border-right:1px solid var(--border); flex-shrink:0; display:flex; flex-direction:column; padding:22px 14px; position:relative; }
+  .sidebar .brand{ display:flex; align-items:center; gap:10px; padding:6px 8px 26px; }
+  .sidebar .brand .brand-mark{ margin:0; width:30px; height:30px; }
+  .brand-name{ font-weight:600; font-size:14.5px; letter-spacing:-0.01em; }
+  .brand-sub{ font-size:10.5px; color:var(--text-faint); }
+
+  .nav-group{ margin-bottom:20px; }
+  .nav-label{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-faint); padding:0 10px; margin-bottom:8px; font-weight:600; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:9px; font-size:13.5px; color:var(--text-dim); margin-bottom:2px; transition:all .18s var(--ease); position:relative; }
+  .nav-item svg{ width:16px; height:16px; opacity:0.75; flex-shrink:0; transition:opacity .18s; }
+  .nav-item:hover{ background:var(--surface-hover); color:var(--text); }
+  .nav-item:hover svg{ opacity:1; }
+  .nav-item.active{ background:linear-gradient(90deg, rgba(108,124,255,0.16), rgba(108,124,255,0.02)); color:#fff; box-shadow:inset 2px 0 0 var(--accent); }
+  .nav-item.active svg{ opacity:1; filter:drop-shadow(0 0 4px var(--accent-glow)); }
+  .nav-item .badge{ margin-left:auto; background:var(--rose); color:#fff; font-size:10px; padding:1px 6px; border-radius:20px; font-weight:700; box-shadow:0 0 8px rgba(255,107,122,0.5); }
+  .sidebar-foot{ margin-top:auto; padding:14px 12px; border-top:1px solid var(--border); }
+  .wallet-mini{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm); }
+  .wallet-mini .label{ font-size:10.5px; color:var(--text-faint); }
+  .wallet-mini .amt{ font-size:15px; font-weight:600; font-family:'IBM Plex Mono', monospace; }
+  .user-row{ display:flex; align-items:center; gap:9px; padding:0 2px; cursor:pointer; }
+  .avatar{ width:29px; height:29px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+  .user-name{ font-size:12.5px; font-weight:600; }
+  .user-role{ font-size:10.5px; color:var(--text-faint); }
+
+  .main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar{ height:62px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 30px; background:rgba(10,11,15,0.7); backdrop-filter:blur(12px); position:sticky; top:0; z-index:10; }
+  .page-title{ font-size:16px; font-weight:600; letter-spacing:-0.01em; }
+  .topbar-right{ display:flex; align-items:center; gap:12px; }
+  .search-box{ display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 13px; font-size:13px; color:var(--text-faint); width:230px; transition:border-color .2s; }
+  .search-box input{ background:none; border:none; outline:none; color:var(--text); font-size:13px; width:100%; font-family:inherit; }
+  .search-box input::placeholder{ color:var(--text-faint); }
+  .search-box:hover, .search-box:focus-within{ border-color:var(--border-hover); }
+  .icon-btn{ width:36px; height:36px; border-radius:var(--r-sm); display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); transition:border-color .2s, background .2s; }
+  .icon-btn:hover{ border-color:var(--border-hover); background:var(--surface-hover); }
+  .content{ flex:1; padding:30px; overflow-y:auto; }
+  .view{ display:none; }
+  .view.active{ display:block; animation:fade-up 0.4s var(--ease); }
+  @keyframes fade-up{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; transition:transform .25s var(--ease), border-color .25s, box-shadow .25s; opacity:0; animation:card-in 0.5s var(--ease) forwards; }
+  .stat-card:nth-child(1){ animation-delay:0.02s; } .stat-card:nth-child(2){ animation-delay:0.08s; } .stat-card:nth-child(3){ animation-delay:0.14s; } .stat-card:nth-child(4){ animation-delay:0.2s; }
+  @keyframes card-in{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+  .stat-card:hover{ transform:translateY(-3px); border-color:var(--border-hover); box-shadow:0 20px 40px -20px rgba(0,0,0,0.5); }
+  .stat-card .label{ font-size:12px; color:var(--text-dim); font-weight:500; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+  .stat-card .num{ font-size:34px; font-weight:500; letter-spacing:-0.02em; }
+  .stat-card .trend{ font-size:12px; color:var(--mint); margin-top:8px; font-weight:500; }
+
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); backdrop-filter:blur(20px); }
+  .panel-head{ padding:18px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-head h3{ font-size:14.5px; font-weight:600; letter-spacing:-0.01em; }
+  .panel-body{ padding:4px 0; }
+  .empty-state{ padding:40px 22px; text-align:center; color:var(--text-faint); font-size:13px; }
+
+  .row-list .row-item{ display:flex; align-items:center; gap:13px; padding:13px 22px; border-bottom:1px solid var(--border); transition:background .18s; }
+  .row-list .row-item:hover{ background:var(--surface-hover); }
+  .row-list .row-item:last-child{ border-bottom:none; }
+  .row-icon{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .row-title{ font-size:13.5px; font-weight:500; }
+  .row-sub{ font-size:12px; color:var(--text-faint); margin-top:1px; }
+
+  .btn{ padding:9px 16px; border-radius:var(--r-sm); font-size:13px; font-weight:600; transition:all .18s var(--ease); }
+  .btn-signal{ background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; box-shadow:0 6px 18px -8px var(--accent-glow); }
+  .btn-signal:hover{ transform:translateY(-1px); box-shadow:0 10px 24px -6px var(--accent-glow); }
+  .btn-signal:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+  .btn-ghost{ background:var(--surface); border:1px solid var(--border); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--border-hover); background:var(--surface-hover); }
+
+  .badge-pill{ font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; display:inline-block; border:1px solid transparent; }
+  .b-approved, .b-completed, .b-connected{ background:rgba(62,216,163,0.12); color:var(--mint); border-color:rgba(62,216,163,0.25); }
+  .b-pending, .b-scheduled{ background:rgba(245,185,77,0.12); color:var(--amber); border-color:rgba(245,185,77,0.25); }
+  .b-rejected, .b-failed{ background:rgba(255,107,122,0.12); color:var(--rose); border-color:rgba(255,107,122,0.25); }
+  .b-running{ background:rgba(108,124,255,0.14); color:var(--accent); border-color:rgba(108,124,255,0.3); }
+  .b-draft, .b-disconnected{ background:rgba(255,255,255,0.05); color:var(--text-dim); border-color:var(--border); }
+
+  .tag-chip{ font-size:11px; background:var(--surface); border:1px solid var(--border); padding:3px 9px; border-radius:20px; color:var(--text-dim); }
+
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); font-weight:600; padding:12px 22px; border-bottom:1px solid var(--border); }
+  td{ padding:14px 22px; font-size:13.5px; border-bottom:1px solid var(--border); }
+  tr{ transition:background .15s; }
+  tr:hover td{ background:var(--surface-hover); }
+  tr:last-child td{ border-bottom:none; }
+  .phone-mono{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--text-dim); }
+
+  .toolbar{ display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .toolbar .search-box{ width:290px; }
+
+  .inbox-shell{ display:flex; height:calc(100vh - 62px - 60px); background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; backdrop-filter:blur(20px); }
+  .conv-list{ width:300px; border-right:1px solid var(--border); overflow-y:auto; flex-shrink:0; }
+  .conv-item{ display:flex; gap:11px; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s; }
+  .conv-item:hover, .conv-item.active{ background:var(--surface-hover); }
+  .conv-item.active{ box-shadow:inset 2px 0 0 var(--accent); }
+  .conv-name{ font-size:13.5px; font-weight:600; }
+  .conv-preview{ font-size:12px; color:var(--text-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
+  .conv-time{ font-size:10.5px; color:var(--text-faint); margin-left:auto; }
+  .unread-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent-glow); margin-left:6px; flex-shrink:0; }
+
+  .thread{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .thread-head{ padding:15px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:11px; }
+  .thread-body{ flex:1; overflow-y:auto; padding:22px; display:flex; flex-direction:column; gap:11px; }
+  .bubble{ max-width:58%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5; opacity:0; animation:bubble-in 0.35s var(--ease) forwards; }
+  @keyframes bubble-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+  .bubble.in{ background:var(--surface); border:1px solid var(--border); align-self:flex-start; border-bottom-left-radius:4px; }
+  .bubble.out{ background:linear-gradient(135deg, rgba(108,124,255,0.18), rgba(157,108,255,0.1)); border:1px solid var(--border-accent); align-self:flex-end; border-bottom-right-radius:4px; }
+  .bubble-meta{ display:flex; align-items:center; gap:5px; margin-top:5px; font-size:10.5px; color:var(--text-faint); justify-content:flex-end; }
+  .thread-input{ padding:15px 20px; border-top:1px solid var(--border); display:flex; gap:10px; }
+  .thread-input input{ flex:1; padding:11px 15px; border:1px solid var(--border); border-radius:24px; font-size:13.5px; font-family:inherit; background:var(--surface); color:var(--text); }
+  .thread-input input::placeholder{ color:var(--text-faint); }
+  .thread-input input:focus{ outline:none; border-color:var(--accent); }
+  .send-btn{ width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px -6px var(--accent-glow); transition:transform .18s; }
+  .send-btn:hover{ transform:scale(1.06); }
+  .send-btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .cprog{ display:flex; height:6px; border-radius:4px; overflow:hidden; background:rgba(255,255,255,0.06); width:160px; }
+  .cprog span{ height:100%; transition:width 0.6s var(--ease); }
+  .seg-delivered{ background:var(--text-faint); }
+  .seg-read{ background:linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .seg-failed{ background:var(--rose); }
+
+  .modal-bg{ display:none; position:fixed; inset:0; background:rgba(5,6,10,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center; z-index:50; }
+  .modal-bg.active{ display:flex; animation:fade-up 0.25s var(--ease); }
+  .modal{ width:440px; background:var(--surface-solid); border:1px solid var(--border); border-radius:var(--r-lg); padding:26px; box-shadow:0 40px 80px -30px rgba(0,0,0,0.7); }
+  .modal h3{ font-size:16px; font-weight:600; margin-bottom:20px; }
+  .modal .field{ margin-bottom:15px; }
+  .modal select, .modal input[type=text], .modal input[type=datetime-local]{ width:100%; padding:10px 13px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:13.5px; font-family:inherit; background:rgba(255,255,255,0.03); color:var(--text); }
+  .modal select:focus, .modal input:focus{ outline:none; border-color:var(--accent); }
+  .modal-actions{ display:flex; gap:10px; margin-top:22px; }
+  .modal-actions .btn{ flex:1; text-align:center; }
+  .modal-error{ display:none; background:rgba(255,107,122,0.1); border:1px solid rgba(255,107,122,0.3); color:var(--rose); font-size:12px; padding:8px 11px; border-radius:8px; margin-bottom:13px; }
+
+  .wallet-card{ background:linear-gradient(135deg, rgba(108,124,255,0.14), rgba(157,108,255,0.06)); border:1px solid var(--border-accent); border-radius:var(--r-lg); padding:26px; margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-end; position:relative; overflow:hidden; }
+  .wallet-card::before{ content:''; position:absolute; top:-60%; right:-10%; width:280px; height:280px; border-radius:50%; background:radial-gradient(circle, var(--accent-glow), transparent 70%); filter:blur(40px); }
+  .wallet-card .label{ font-size:12px; color:var(--text-dim); margin-bottom:8px; position:relative; }
+  .wallet-card .num{ font-size:40px; font-weight:500; position:relative; }
+
+  .toast{ position:fixed; bottom:24px; right:24px; background:var(--surface-solid); border:1px solid var(--border); border-radius:var(--r-sm); padding:12px 18px; font-size:13px; box-shadow:0 20px 40px -20px rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; gap:8px; }
+  .toast.show{ display:flex; animation:fade-up 0.25s var(--ease); }
+  .toast.error{ border-color:rgba(255,107,122,0.3); color:var(--rose); }
+  .toast.success{ border-color:rgba(62,216,163,0.3); color:var(--mint); }
+
+  .skeleton{ background:linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:6px; }
+  @keyframes shimmer{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<svg class="grain" width="100%" height="100%">
+  <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#noise)"/>
+</svg>
+
+<div id="login-screen">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="login-wrap">
+    <div class="login-hero">
+      <div class="eyebrow"><span class="live-dot"></span> <span id="domain-label">Reachly console</span></div>
+      <h1>Every message, <em>proven</em> delivered.</h1>
+      <p>The console built around one question your customers keep asking: did they actually see it? Now you always know.</p>
+      <div class="mini-thread">
+        <div class="mini-bubble">Bhai service due hai kya mera?</div>
+        <div class="mini-bubble out">
+          Haan, kal 11 AM slot free hai
+          <span class="ticks tick-read"><svg viewBox="0 0 15 11"><path class="tick-path" d="M1 5 L4.5 8.5 L9 3.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path class="tick-path" d="M6.5 5 L10 8.5 L14 3.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <div class="brand-mark">
+        <svg viewBox="0 0 20 14" fill="none"><path d="M1 7 L7 13 L19 1" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2>Sign in</h2>
+      <p class="sub">Welcome back to Reachly</p>
+
+      <div class="login-error" id="login-error"></div>
+
+      <form id="login-form">
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="login-email" placeholder="you@business.com" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button class="btn-primary" type="submit" id="login-btn">Sign in</button>
+      </form>
+
+      <div class="domain-tag">
+        <span style="color:var(--mint);">●</span> <span id="domain-tag-text">connecting…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen">
+<div class="shell">
+
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 20 14" fill="none"><path d="M1 7 L7 13 L19 1" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="brand-name" id="sidebar-brand">Reachly</div>
+        <div class="brand-sub">Reachly console</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item active" data-view="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-view="inbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Inbox
+        <span class="badge" id="inbox-badge" style="display:none;">0</span>
+      </div>
+      <div class="nav-item" data-view="contacts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Messaging</div>
+      <div class="nav-item" data-view="campaigns">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+        Campaigns
+      </div>
+      <div class="nav-item" data-view="templates">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        Templates
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Account</div>
+      <div class="nav-item" data-view="billing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Billing
+      </div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="wallet-mini">
+        <span class="label">Wallet</span>
+        <span class="amt" id="sidebar-wallet">₹—</span>
+      </div>
+      <div class="user-row" id="logout-trigger" title="Click to sign out">
+        <div class="avatar" id="user-avatar">··</div>
+        <div>
+          <div class="user-name" id="user-name">—</div>
+          <div class="user-role" id="user-role">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">Overview</div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="global-search" placeholder="Search contacts…" />
+        </div>
+        <div class="icon-btn" onclick="loadOverview()" title="Refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.8"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="view active" id="view-overview">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="label">Sent <span class="ticks tick-sent"><svg viewBox="0 0 15 11"><path class="tick-path" d="M2 5.5 L5.5 9 L13 1.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+            <div class="num serif" data-count="0" id="stat-sent">0</div>
+            <div class="trend" id="stat-sent-trend">&nbsp;</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Delivered <span class="ticks tick-delivered"><svg viewBox="0 0 15 11"><path class="tick-path" d="M1 5.5 L4.5 9 L9 3.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path class="tick-path" d="M6.5 5.5 L10 9 L14 1.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+            <div class="num serif" data-count="0" id="stat-delivered">0</div>
+            <div class="trend" id="stat-delivered-trend">&nbsp;</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Read <span class="ticks tick-read"><svg viewBox="0 0 15 11"><path class="tick-path" d="M1 5.5 L4.5 9 L9 3.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path class="tick-path" d="M6.5 5.5 L10 9 L14 1.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+            <div class="num serif" data-count="0" id="stat-read">0</div>
+            <div class="trend" id="stat-read-trend">&nbsp;</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Wallet balance</div>
+            <div class="num serif" id="stat-wallet">₹—</div>
+            <div class="trend" style="color:var(--amber)" id="stat-wallet-trend">&nbsp;</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px;">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Recent campaigns</h3>
+              <a class="btn btn-ghost" onclick="switchView('campaigns')">View all</a>
+            </div>
+            <div class="panel-body row-list" id="recent-campaigns-list">
+              <div class="empty-state">Loading…</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>WhatsApp number</h3></div>
+            <div class="panel-body" id="number-panel" style="padding:18px 22px;">
+              <div class="empty-state" style="padding:0;">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-inbox">
+        <div class="inbox-shell">
+          <div class="conv-list" id="conv-list"><div class="empty-state">Loading conversations…</div></div>
+          <div class="thread">
+            <div class="thread-head" id="thread-head" style="display:none;">
+              <div class="avatar" id="thread-avatar">··</div>
+              <div>
+                <div style="font-size:13.5px; font-weight:600;" id="thread-name">—</div>
+                <div class="phone-mono" style="font-size:11px; color:var(--text-faint);" id="thread-phone">—</div>
+              </div>
+            </div>
+            <div class="thread-body" id="thread-body">
+              <div class="empty-state" style="margin:auto;">Select a conversation</div>
+            </div>
+            <div class="thread-input">
+              <input type="text" placeholder="Type a reply…" id="reply-input" disabled />
+              <button class="send-btn" onclick="sendReply()" id="reply-send-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-contacts">
+        <div class="toolbar">
+          <div class="search-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> <input type="text" id="contacts-search" placeholder="Search contacts…" /></div>
+          <div id="contacts-tag-filters"></div>
+          <div style="margin-left:auto; display:flex; gap:10px;">
+            <input type="file" id="csv-input" accept=".csv" style="display:none;" onchange="importCsv(this)">
+            <button class="btn btn-ghost" onclick="document.getElementById('csv-input').click()">Import CSV</button>
+            <button class="btn btn-signal" onclick="openModal('contact-modal')">+ Add contact</button>
+          </div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Tags</th><th>Last contacted</th><th></th></tr></thead>
+            <tbody id="contacts-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="view" id="view-campaigns">
+        <div class="toolbar">
+          <div style="margin-left:auto;">
+            <button class="btn btn-signal" onclick="openCampaignModal()">+ New campaign</button>
+          </div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Campaign</th><th>Status</th><th>Progress</th><th>Contacts</th><th></th></tr></thead>
+            <tbody id="campaigns-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="view" id="view-templates">
+        <div class="toolbar">
+          <div style="margin-left:auto;">
+            <button class="btn btn-signal" onclick="openModal('template-modal')">+ New template</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;" id="templates-grid">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+
+      <div class="view" id="view-billing">
+        <div class="wallet-card">
+          <div>
+            <div class="label">Wallet balance</div>
+            <div class="num serif" id="billing-wallet-num">₹—</div>
+          </div>
+          <button class="btn btn-signal" onclick="openModal('topup-modal')">Top up wallet</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Transaction history</h3></div>
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th>Type</th><th style="text-align:right;">Amount</th></tr></thead>
+            <tbody id="txn-tbody"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="contact-modal">
+  <div class="modal">
+    <h3>Add contact</h3>
+    <div class="modal-error" id="contact-modal-error"></div>
+    <div class="field"><label>Name</label><input type="text" id="cm-name" placeholder="Rahul Sharma"></div>
+    <div class="field"><label>Phone (with country code)</label><input type="text" id="cm-phone" placeholder="+919810022334"></div>
+    <div class="field"><label>Tags (comma separated)</label><input type="text" id="cm-tags" placeholder="dealer, hot-lead"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('contact-modal')">Cancel</button>
+      <button class="btn btn-signal" id="cm-save-btn" onclick="saveContact()">Save contact</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="campaign-modal">
+  <div class="modal">
+    <h3>New campaign</h3>
+    <div class="modal-error" id="campaign-modal-error"></div>
+    <div class="field"><label>Campaign name</label><input type="text" id="cam-name" placeholder="Diwali Service Offer"></div>
+    <div class="field"><label>Template (approved only)</label>
+      <select id="cam-template"><option value="">Loading templates…</option></select>
+    </div>
+    <div class="field"><label>Audience tag (optional — blank = all contacts)</label>
+      <select id="cam-tag"><option value="">All contacts</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cam-draft-btn" onclick="saveCampaign(false)">Save as draft</button>
+      <button class="btn btn-signal" id="cam-send-btn" onclick="saveCampaign(true)">Send now</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="template-modal">
+  <div class="modal">
+    <h3>New template</h3>
+    <div class="modal-error" id="template-modal-error"></div>
+    <div class="field"><label>Template name (lowercase, underscores)</label><input type="text" id="tm-name" placeholder="service_reminder_oct"></div>
+    <div class="field"><label>Category</label>
+      <select id="tm-category"><option value="utility">Utility</option><option value="marketing">Marketing</option><option value="authentication">Authentication</option></select>
+    </div>
+    <div class="field"><label>Message body</label><input type="text" id="tm-body" placeholder="Hi {{1}}, your service is due..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('template-modal')">Cancel</button>
+      <button class="btn btn-signal" id="tm-save-btn" onclick="saveTemplate()">Submit for approval</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="topup-modal">
+  <div class="modal">
+    <h3>Top up wallet</h3>
+    <div class="modal-error" id="topup-modal-error"></div>
+    <div class="field"><label>Amount (₹, minimum 100)</label><input type="text" id="topup-amount" placeholder="2000"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('topup-modal')">Cancel</button>
+      <button class="btn btn-signal" id="topup-btn" onclick="startTopup()">Proceed to pay</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   API LAYER — talks to your real FastAPI backend.
+   Dashboard is served by FastAPI itself at the client's domain root,
+   so relative paths ("/api/v1/...") hit the same origin automatically.
+   ═══════════════════════════════════════════════════════════════ */
+const API_BASE = "";  // same-origin. Set to e.g. "https://whatsapp.skylinebajaj.com" if hosted separately.
+
+const state = {
+  accessToken:  localStorage.getItem('reachly_access_token')  || null,
+  refreshToken: localStorage.getItem('reachly_refresh_token') || null,
+  user:         null,
+  activeContactId: null,
+  templates:    [],
+  campaigns:    [],
+};
+
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(()=> t.classList.remove('show'), 3200);
+}
+
+async function api(path, opts={}){
+  const headers = opts.headers || {};
+  if(state.accessToken) headers['Authorization'] = `Bearer ${state.accessToken}`;
+  if(opts.body && !(opts.body instanceof FormData)){
+    headers['Content-Type'] = 'application/json';
+  }
+  const res = await fetch(API_BASE + path, {
+    method: opts.method || 'GET',
+    headers,
+    body: opts.body instanceof FormData ? opts.body : (opts.body ? JSON.stringify(opts.body) : undefined),
+  });
+
+  if(res.status === 401 && state.refreshToken && !opts._retried){
+    const refreshed = await tryRefreshToken();
+    if(refreshed) return api(path, {...opts, _retried:true});
+    logout();
+    throw new Error('Session expired');
+  }
+
+  if(!res.ok){
+    let detail = 'Request failed';
+    try{ const j = await res.json(); detail = j.detail || detail; }catch(e){}
+    throw new Error(detail);
+  }
+  if(res.status === 204) return null;
+  return res.json();
+}
+
+async function tryRefreshToken(){
+  try{
+    const res = await fetch(API_BASE + '/api/v1/auth/refresh', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ refresh_token: state.refreshToken })
+    });
+    if(!res.ok) return false;
+    const data = await res.json();
+    setSession(data);
+    return true;
+  }catch(e){ return false; }
+}
+
+function setSession(data){
+  state.accessToken  = data.access_token;
+  state.refreshToken = data.refresh_token;
+  state.user          = data.user;
+  localStorage.setItem('reachly_access_token', data.access_token);
+  localStorage.setItem('reachly_refresh_token', data.refresh_token);
+}
+
+function logout(){
+  state.accessToken = null; state.refreshToken = null; state.user = null;
+  localStorage.removeItem('reachly_access_token');
+  localStorage.removeItem('reachly_refresh_token');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+/* ── Ticks helper ── */
+function tickSvg(type){
+  if(type==='sent') return `<span class="ticks tick-sent"><svg viewBox="0 0 15 11"><path class="tick-path" d="M2 5.5 L5.5 9 L13 1.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+  const cls = type==='read' ? 'tick-read' : 'tick-delivered';
+  return `<span class="ticks ${cls}"><svg viewBox="0 0 15 11"><path class="tick-path" d="M1 5.5 L4.5 9 L9 3.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path class="tick-path" d="M6.5 5.5 L10 9 L14 1.5" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+}
+function initials(name){ return (name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+/* ── Login ── */
+document.getElementById('domain-tag-text').textContent = window.location.host || 'localhost';
+document.getElementById('domain-label').textContent = 'Live on ' + (window.location.host || 'localhost');
+
+document.getElementById('login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const errBox = document.getElementById('login-error');
+  errBox.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  try{
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const data = await api('/api/v1/auth/login', { method:'POST', body:{ email, password } });
+    setSession(data);
+    enterApp();
+  }catch(err){
+    errBox.textContent = err.message || 'Login failed';
+    errBox.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+});
+
+async function enterApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  document.getElementById('user-avatar').textContent = initials(state.user.name);
+  document.getElementById('user-name').textContent    = state.user.name;
+  document.getElementById('user-role').textContent    = (state.user.role||'').replace('_',' ');
+
+  loadOverview();
+  loadContacts();
+  loadTemplates();
+  loadCampaigns();
+  loadBilling();
+  loadInbox();
+}
+
+document.getElementById('logout-trigger').addEventListener('click', ()=>{
+  if(confirm('Sign out of Reachly?')) logout();
+});
+
+// Auto-login if a valid token is already stored (page refresh)
+(async function bootstrap(){
+  if(state.accessToken){
+    try{
+      const me = await api('/api/v1/auth/me');
+      state.user = me;
+      enterApp();
+    }catch(e){ /* token invalid/expired, fall through to login screen */ }
+  }
+})();
+
+/* ── Nav switching ── */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=> switchView(item.dataset.view));
+});
+function switchView(view){
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.toggle('active', i.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('page-title').textContent = view.charAt(0).toUpperCase()+view.slice(1);
+}
+function openModal(id){ document.getElementById(id).classList.add('active'); }
+function closeModal(id){
+  document.getElementById(id).classList.remove('active');
+  const err = document.getElementById(id+'-error');
+  if(err) err.style.display = 'none';
+}
+function showModalError(modalId, msg){
+  const el = document.getElementById(modalId+'-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+/* ═══ OVERVIEW : GET /api/v1/campaigns/  GET /api/v1/billing/wallet  GET /api/v1/wa-numbers/ ═══ */
+function animateCount(el, target){
+  const dur = 800; const start = performance.now(); const from = 0;
+  function tick(now){
+    const p = Math.min((now-start)/dur, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(from + eased*(target-from)).toLocaleString();
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+async function loadOverview(){
+  try{
+    const [campaignsRes, wallet, numbers] = await Promise.all([
+      api('/api/v1/campaigns/?limit=100'),
+      api('/api/v1/billing/wallet'),
+      api('/api/v1/wa-numbers/'),
+    ]);
+
+    const campaigns = campaignsRes.campaigns || [];
+    const totals = campaigns.reduce((acc,c)=>({
+      sent: acc.sent + (c.sent||0),
+      delivered: acc.delivered + (c.delivered||0),
+      read: acc.read + (c.read||0),
+    }), {sent:0, delivered:0, read:0});
+
+    animateCount(document.getElementById('stat-sent'), totals.sent);
+    animateCount(document.getElementById('stat-delivered'), totals.delivered);
+    animateCount(document.getElementById('stat-read'), totals.read);
+    document.getElementById('stat-delivered-trend').textContent = totals.sent ? `${((totals.delivered/totals.sent)*100).toFixed(1)}% delivery rate` : 'No messages yet';
+    document.getElementById('stat-read-trend').textContent = totals.sent ? `${((totals.read/totals.sent)*100).toFixed(1)}% read rate` : 'No messages yet';
+    document.getElementById('stat-sent-trend').textContent = `${campaigns.length} campaigns total`;
+
+    const bal = wallet.wallet_balance ?? 0;
+    document.getElementById('stat-wallet').textContent = '₹' + bal.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('sidebar-wallet').textContent = '₹' + Math.round(bal).toLocaleString();
+    document.getElementById('stat-wallet-trend').textContent = bal < 100 ? 'Low balance — top up soon' : 'Balance healthy';
+    document.getElementById('sidebar-brand').textContent = wallet.plan ? wallet.plan.charAt(0).toUpperCase()+wallet.plan.slice(1)+' plan' : 'Reachly';
+
+    // Recent campaigns list
+    const listEl = document.getElementById('recent-campaigns-list');
+    if(!campaigns.length){
+      listEl.innerHTML = `<div class="empty-state">No campaigns yet. Create your first one.</div>`;
+    }else{
+      listEl.innerHTML = campaigns.slice(0,3).map(c=>`
+        <div class="row-item">
+          <div class="row-icon" style="background:rgba(108,124,255,0.14);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></div>
+          <div>
+            <div class="row-title">${escapeHtml(c.name)}</div>
+            <div class="row-sub">${c.total_contacts||0} contacts</div>
+          </div>
+          <span class="badge-pill b-${c.status}" style="margin-left:auto;">${c.status.charAt(0).toUpperCase()+c.status.slice(1)}</span>
+        </div>
+      `).join('');
+    }
+
+    // Number panel
+    const numPanel = document.getElementById('number-panel');
+    const num = (numbers||[])[0];
+    if(!num){
+      numPanel.innerHTML = `<div class="empty-state" style="padding:0;">No WhatsApp number connected yet.<br><br><a class="btn btn-signal" style="display:inline-block;" href="#">Connect number</a></div>`;
+    }else{
+      numPanel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:11px;">
+          <span style="font-size:12px; color:var(--text-dim);">Number</span>
+          <span class="phone-mono">${escapeHtml(num.display_phone_number)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:11px;">
+          <span style="font-size:12px; color:var(--text-dim);">Status</span>
+          <span class="badge-pill b-${num.status}">${num.status.charAt(0).toUpperCase()+num.status.slice(1)}</span>
+        </div>
+      `;
+    }
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+}
+
+/* ═══ INBOX : GET /api/v1/inbox/conversations  GET /api/v1/inbox/conversations/{id}  POST reply ═══ */
+async function loadInbox(){
+  const listEl = document.getElementById('conv-list');
+  try{
+    const data = await api('/api/v1/inbox/conversations');
+    const convos = data.conversations || [];
+
+    const unread = convos.reduce((a,c)=>a+(c.unread_count||0),0);
+    const badge = document.getElementById('inbox-badge');
+    if(unread>0){ badge.style.display='inline-block'; badge.textContent = unread; } else { badge.style.display='none'; }
+
+    if(!convos.length){
+      listEl.innerHTML = `<div class="empty-state">No conversations yet. Messages will appear here once customers write in.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = convos.map(c=>`
+      <div class="conv-item" data-contact-id="${c.contact_id}">
+        <div class="avatar">${initials(c.contact_name)}</div>
+        <div style="min-width:0;">
+          <div class="conv-name">${escapeHtml(c.contact_name)}</div>
+          <div class="conv-preview">${escapeHtml(c.last_message?.text || '[media]')}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; margin-left:auto;">
+          <span class="conv-time">${new Date(c.last_message_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+          ${c.unread_count ? `<span class="unread-dot"></span>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.conv-item').forEach(el=>{
+      el.addEventListener('click', ()=> openConversation(parseInt(el.dataset.contactId), el));
+    });
+
+    // auto-open first conversation
+    const first = listEl.querySelector('.conv-item');
+    if(first) openConversation(parseInt(first.dataset.contactId), first);
+
+  }catch(err){
+    listEl.innerHTML = `<div class="empty-state">Couldn't load conversations.</div>`;
+    showToast(err.message, 'error');
+  }
+}
+
+async function openConversation(contactId, el){
+  state.activeContactId = contactId;
+  document.querySelectorAll('.conv-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+
+  document.getElementById('reply-input').disabled = false;
+  document.getElementById('reply-send-btn').disabled = false;
+
+  const body = document.getElementById('thread-body');
+  body.innerHTML = `<div class="empty-state" style="margin:auto;">Loading…</div>`;
+
+  try{
+    const data = await api(`/api/v1/inbox/conversations/${contactId}`);
+    document.getElementById('thread-head').style.display = 'flex';
+    document.getElementById('thread-avatar').textContent = initials(data.contact.name);
+    document.getElementById('thread-name').textContent = data.contact.name;
+    document.getElementById('thread-phone').textContent = data.contact.phone;
+
+    renderThreadMessages(data.messages || []);
+  }catch(err){
+    body.innerHTML = `<div class="empty-state" style="margin:auto;">Couldn't load messages.</div>`;
+    showToast(err.message, 'error');
+  }
+}
+
+function renderThreadMessages(messages){
+  const body = document.getElementById('thread-body');
+  if(!messages.length){
+    body.innerHTML = `<div class="empty-state" style="margin:auto;">No messages yet.</div>`;
+    return;
+  }
+  body.innerHTML = messages.map((m,i)=>{
+    const dir = m.direction === 'inbound' ? 'in' : 'out';
+    const text = m.content?.text || m.content?.caption || '[media]';
+    const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    return `
+      <div class="bubble ${dir}" style="animation-delay:${Math.min(i,10)*0.03}s">
+        ${escapeHtml(text)}
+        ${dir==='out' ? `<div class="bubble-meta">${time} ${tickSvg(m.status)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendReply(){
+  const input = document.getElementById('reply-input');
+  const text = input.value.trim();
+  if(!text || !state.activeContactId) return;
+
+  const btn = document.getElementById('reply-send-btn');
+  btn.disabled = true;
+  try{
+    await api(`/api/v1/inbox/conversations/${state.activeContactId}/reply`, {
+      method:'POST', body:{ message_type:'text', text }
+    });
+    input.value = '';
+    await openConversation(state.activeContactId, document.querySelector('.conv-item.active'));
+  }catch(err){
+    showToast(err.message, 'error');
+  }finally{
+    btn.disabled = false;
+  }
+}
+document.getElementById('reply-input').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') sendReply();
+});
+
+/* ═══ CONTACTS : GET/POST /api/v1/contacts/  POST /api/v1/contacts/import ═══ */
+async function loadContacts(){
+  const tbody = document.getElementById('contacts-tbody');
+  try{
+    const data = await api('/api/v1/contacts/?limit=100');
+    const contacts = data.contacts || [];
+    if(!contacts.length){
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No contacts yet. Add one or import a CSV.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = contacts.map(c=>`
+      <tr>
+        <td style="font-weight:500;">${escapeHtml(c.name)}</td>
+        <td class="phone-mono">${escapeHtml(c.phone)}</td>
+        <td>${(c.tags||[]).map(t=>`<span class="tag-chip" style="margin-right:4px;">${escapeHtml(t)}</span>`).join('')}</td>
+        <td style="color:var(--text-dim);">${c.last_contacted_at ? new Date(c.last_contacted_at).toLocaleDateString() : 'Never'}</td>
+        <td style="text-align:right; color:var(--text-faint);">⋯</td>
+      </tr>
+    `).join('');
+
+    // tag filter chips
+    const tagsData = await api('/api/v1/contacts/meta/tags');
+    document.getElementById('contacts-tag-filters').innerHTML = (tagsData.tags||[]).slice(0,6)
+      .map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
+
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Couldn't load contacts.</td></tr>`;
+    showToast(err.message, 'error');
+  }
+}
+
+async function saveContact(){
+  const name  = document.getElementById('cm-name').value.trim();
+  const phone = document.getElementById('cm-phone').value.trim();
+  const tags  = document.getElementById('cm-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+
+  if(!name || !phone){ showModalError('contact-modal', 'Name and phone are required'); return; }
+
+  const btn = document.getElementById('cm-save-btn');
+  btn.disabled = true;
+  try{
+    await api('/api/v1/contacts/', { method:'POST', body:{ name, phone, tags } });
+    closeModal('contact-modal');
+    document.getElementById('cm-name').value = '';
+    document.getElementById('cm-phone').value = '';
+    document.getElementById('cm-tags').value = '';
+    showToast('Contact added');
+    loadContacts();
+  }catch(err){
+    showModalError('contact-modal', err.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function importCsv(input){
+  const file = input.files[0];
+  if(!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+  try{
+    const result = await api('/api/v1/contacts/import', { method:'POST', body: formData });
+    showToast(`Imported ${result.created} contacts (${result.skipped} skipped)`);
+    loadContacts();
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+  input.value = '';
+}
+
+/* ═══ TEMPLATES : GET/POST /api/v1/templates/ ═══ */
+async function loadTemplates(){
+  const grid = document.getElementById('templates-grid');
+  try{
+    const data = await api('/api/v1/templates/?limit=50');
+    state.templates = data.templates || [];
+    if(!state.templates.length){
+      grid.innerHTML = `<div class="empty-state">No templates yet. Create one to start sending campaigns.</div>`;
+      return;
+    }
+    grid.innerHTML = state.templates.map(t=>`
+      <div class="panel" style="padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:11px;">
+          <span class="mono" style="font-size:12.5px; font-weight:600;">${escapeHtml(t.name)}</span>
+          <span class="badge-pill b-${t.status}">${t.status.charAt(0).toUpperCase()+t.status.slice(1)}</span>
+        </div>
+        <span class="tag-chip" style="margin-bottom:11px; display:inline-block;">${t.category}</span>
+        <p style="font-size:12.5px; color:var(--text-dim); line-height:1.55;">${escapeHtml((t.components?.message_components||[]).find(c=>c.type==='BODY')?.text || '')}</p>
+      </div>
+    `).join('');
+  }catch(err){
+    grid.innerHTML = `<div class="empty-state">Couldn't load templates.</div>`;
+    showToast(err.message, 'error');
+  }
+}
+
+async function saveTemplate(){
+  const name = document.getElementById('tm-name').value.trim();
+  const category = document.getElementById('tm-category').value;
+  const body = document.getElementById('tm-body').value.trim();
+
+  if(!/^[a-z0-9_]+$/.test(name)){ showModalError('template-modal', 'Name must be lowercase letters, numbers, underscores only'); return; }
+  if(!body){ showModalError('template-modal', 'Message body is required'); return; }
+
+  const btn = document.getElementById('tm-save-btn');
+  btn.disabled = true;
+  try{
+    await api('/api/v1/templates/', {
+      method:'POST',
+      body:{ name, category, language:'en', components:{ message_components:[{ type:'BODY', text: body }] } }
+    });
+    closeModal('template-modal');
+    document.getElementById('tm-name').value = '';
+    document.getElementById('tm-body').value = '';
+    showToast('Template submitted for approval');
+    loadTemplates();
+  }catch(err){
+    showModalError('template-modal', err.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ═══ CAMPAIGNS : GET/POST /api/v1/campaigns/  POST /api/v1/campaigns/{id}/send ═══ */
+async function loadCampaigns(){
+  const tbody = document.getElementById('campaigns-tbody');
+  try{
+    const data = await api('/api/v1/campaigns/?limit=100');
+    state.campaigns = data.campaigns || [];
+    if(!state.campaigns.length){
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No campaigns yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = state.campaigns.map(c=>{
+      const total = c.total_contacts || 1;
+      const deliveredPct = Math.round((c.delivered/total)*100);
+      const readPct = Math.round((c.read/total)*100);
+      const failedPct = Math.round((c.failed/total)*100);
+      return `
+        <tr>
+          <td style="font-weight:500;">${escapeHtml(c.name)}</td>
+          <td><span class="badge-pill b-${c.status}">${c.status.charAt(0).toUpperCase()+c.status.slice(1)}</span></td>
+          <td>
+            <div class="cprog"><span class="seg-delivered" style="width:${deliveredPct}%"></span><span class="seg-read" style="width:${readPct}%"></span><span class="seg-failed" style="width:${failedPct}%"></span></div>
+          </td>
+          <td class="mono" style="font-size:12.5px;">${(c.total_contacts||0).toLocaleString()}</td>
+          <td style="text-align:right;">
+            ${c.status==='draft' ? `<button class="btn btn-ghost" style="padding:5px 10px; font-size:11.5px;" onclick="sendCampaignNow(${c.id})">Send</button>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Couldn't load campaigns.</td></tr>`;
+    showToast(err.message, 'error');
+  }
+}
+
+async function openCampaignModal(){
+  openModal('campaign-modal');
+  const templateSel = document.getElementById('cam-template');
+  const approved = state.templates.filter(t=>t.status==='approved');
+  templateSel.innerHTML = approved.length
+    ? approved.map(t=>`<option value="${t.id}">${escapeHtml(t.name)} — ${t.category}</option>`).join('')
+    : `<option value="">No approved templates yet</option>`;
+
+  try{
+    const tagsData = await api('/api/v1/contacts/meta/tags');
+    const tagSel = document.getElementById('cam-tag');
+    tagSel.innerHTML = `<option value="">All contacts</option>` + (tagsData.tags||[]).map(t=>`<option value="${escapeHtml(t)}">Tag: ${escapeHtml(t)}</option>`).join('');
+  }catch(e){}
+}
+
+async function saveCampaign(sendNow){
+  const name = document.getElementById('cam-name').value.trim();
+  const templateId = document.getElementById('cam-template').value;
+  const tag = document.getElementById('cam-tag').value;
+
+  if(!name){ showModalError('campaign-modal', 'Campaign name is required'); return; }
+  if(!templateId){ showModalError('campaign-modal', 'Select an approved template'); return; }
+
+  const draftBtn = document.getElementById('cam-draft-btn');
+  const sendBtn  = document.getElementById('cam-send-btn');
+  draftBtn.disabled = true; sendBtn.disabled = true;
+
+  try{
+    const campaign = await api('/api/v1/campaigns/', {
+      method:'POST',
+      body:{ name, template_id: parseInt(templateId), target_tags: tag ? [tag] : [] }
+    });
+    if(sendNow){
+      await api(`/api/v1/campaigns/${campaign.id}/send`, { method:'POST' });
+      showToast('Campaign is sending');
+    }else{
+      showToast('Campaign saved as draft');
+    }
+    closeModal('campaign-modal');
+    document.getElementById('cam-name').value = '';
+    loadCampaigns();
+    loadOverview();
+  }catch(err){
+    showModalError('campaign-modal', err.message);
+  }finally{
+    draftBtn.disabled = false; sendBtn.disabled = false;
+  }
+}
+
+async function sendCampaignNow(id){
+  try{
+    await api(`/api/v1/campaigns/${id}/send`, { method:'POST' });
+    showToast('Campaign is sending');
+    loadCampaigns();
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+}
+
+/* ═══ BILLING : GET /api/v1/billing/wallet  GET /transactions  POST /wallet/topup + /wallet/verify ═══ */
+async function loadBilling(){
+  const tbody = document.getElementById('txn-tbody');
+  try{
+    const [wallet, txnsData] = await Promise.all([
+      api('/api/v1/billing/wallet'),
+      api('/api/v1/billing/transactions?limit=30'),
+    ]);
+    document.getElementById('billing-wallet-num').textContent = '₹' + (wallet.wallet_balance||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const txns = txnsData.transactions || [];
+    if(!txns.length){
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No transactions yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = txns.map(t=>`
+      <tr>
+        <td class="mono" style="font-size:12px; color:var(--text-dim);">${new Date(t.created_at).toLocaleString()}</td>
+        <td>${escapeHtml(t.description||'')}</td>
+        <td><span class="badge-pill ${t.type==='topup'?'b-completed':'b-draft'}">${t.type}</span></td>
+        <td class="mono" style="text-align:right; color:${t.amount<0?'var(--rose)':'var(--mint)'};">${t.amount<0?'-':'+'}₹${Math.abs(t.amount).toFixed(2)}</td>
+      </tr>
+    `).join('');
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Couldn't load billing.</td></tr>`;
+    showToast(err.message, 'error');
+  }
+}
+
+async function startTopup(){
+  const amountInput = document.getElementById('topup-amount');
+  const amount = parseFloat(amountInput.value);
+  if(!amount || amount < 100){ showModalError('topup-modal', 'Minimum top-up is ₹100'); return; }
+
+  const btn = document.getElementById('topup-btn');
+  btn.disabled = true;
+  try{
+    const order = await api('/api/v1/billing/wallet/topup', { method:'POST', body:{ amount } });
+
+    if(typeof Razorpay === 'undefined'){
+      showModalError('topup-modal', 'Payment gateway failed to load. Check your connection.');
+      return;
+    }
+
+    const rzp = new Razorpay({
+      key: order.key_id,
+      amount: Math.round(order.amount * 100),
+      currency: order.currency,
+      order_id: order.order_id,
+      name: 'Reachly',
+      description: 'Wallet top-up',
+      handler: async function(response){
+        try{
+          await api('/api/v1/billing/wallet/verify', {
+            method:'POST',
+            body:{
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature:  response.razorpay_signature,
+              amount: order.amount
+            }
+          });
+          showToast('Wallet topped up successfully');
+          closeModal('topup-modal');
+          amountInput.value = '';
+          loadBilling();
+          loadOverview();
+        }catch(err){
+          showToast('Payment succeeded but verification failed: ' + err.message, 'error');
+        }
+      },
+      theme: { color: '#6C7CFF' }
+    });
+    rzp.open();
+  }catch(err){
+    showModalError('topup-modal', err.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

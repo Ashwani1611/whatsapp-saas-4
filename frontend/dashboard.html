@@ -347,6 +347,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
         Templates
       </div>
+      <div class="nav-item" data-view="automation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+        Automation
+      </div>
     </div>
 
     <div class="nav-group">
@@ -499,6 +503,40 @@
         </div>
       </div>
 
+      <div class="view" id="view-automation">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div class="panel">
+            <div class="panel-head"><h3>Welcome message</h3></div>
+            <div class="panel-body" style="padding:18px 22px;">
+              <p style="font-size:12px; color:var(--text-faint); margin-bottom:12px;">Sent automatically the first time a new contact writes in.</p>
+              <div class="field"><input type="text" id="auto-welcome-text" placeholder="Hi! Thanks for reaching out to us…"></div>
+              <button class="btn btn-signal" style="width:100%;" onclick="saveSingletonRule('welcome')">Save welcome message</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Fallback reply</h3></div>
+            <div class="panel-body" style="padding:18px 22px;">
+              <p style="font-size:12px; color:var(--text-faint); margin-bottom:12px;">Sent when a message doesn't match any keyword rule.</p>
+              <div class="field"><input type="text" id="auto-fallback-text" placeholder="We'll get back to you shortly!"></div>
+              <button class="btn btn-signal" style="width:100%;" onclick="saveSingletonRule('fallback')">Save fallback reply</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <h3 style="font-size:14.5px; font-weight:600;">Keyword triggers</h3>
+          <div style="margin-left:auto;">
+            <button class="btn btn-signal" onclick="openModal('keyword-modal')">+ Add keyword rule</button>
+          </div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Keyword</th><th>Reply</th><th>Status</th><th></th></tr></thead>
+            <tbody id="keyword-rules-tbody"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="view" id="view-billing">
         <div class="wallet-card">
           <div>
@@ -566,6 +604,19 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('template-modal')">Cancel</button>
       <button class="btn btn-signal" id="tm-save-btn" onclick="saveTemplate()">Submit for approval</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="keyword-modal">
+  <div class="modal">
+    <h3>Add keyword rule</h3>
+    <div class="modal-error" id="keyword-modal-error"></div>
+    <div class="field"><label>Keyword (matches anywhere in the message, case-insensitive)</label><input type="text" id="kw-keyword" placeholder="price"></div>
+    <div class="field"><label>Reply text</label><input type="text" id="kw-reply" placeholder="Our starting price is ₹499. Would you like a callback?"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('keyword-modal')">Cancel</button>
+      <button class="btn btn-signal" id="kw-save-btn" onclick="saveKeywordRule()">Add rule</button>
     </div>
   </div>
 </div>
@@ -713,6 +764,7 @@ async function enterApp(){
   loadCampaigns();
   loadBilling();
   loadInbox();
+  loadAutoReplies();
 }
 
 document.getElementById('logout-trigger').addEventListener('click', ()=>{
@@ -1062,6 +1114,104 @@ async function saveTemplate(){
     showModalError('template-modal', err.message);
   }finally{
     btn.disabled = false;
+  }
+}
+
+/* ═══ AUTOMATION : GET/POST/PUT/DELETE /api/v1/auto-replies/ ═══ */
+let autoReplyRules = [];
+
+async function loadAutoReplies(){
+  try{
+    autoReplyRules = await api('/api/v1/auto-replies/');
+
+    const welcome = autoReplyRules.find(r=>r.trigger_type==='welcome' && r.is_active);
+    const fallback = autoReplyRules.find(r=>r.trigger_type==='fallback' && r.is_active);
+    document.getElementById('auto-welcome-text').value = welcome?.response_content?.text || '';
+    document.getElementById('auto-fallback-text').value = fallback?.response_content?.text || '';
+
+    renderKeywordRules();
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+}
+
+function renderKeywordRules(){
+  const tbody = document.getElementById('keyword-rules-tbody');
+  const keywordRules = autoReplyRules.filter(r=>r.trigger_type==='keyword');
+  if(!keywordRules.length){
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No keyword rules yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = keywordRules.map(r=>`
+    <tr>
+      <td style="font-weight:500;">${escapeHtml(r.keyword)}</td>
+      <td style="color:var(--text-dim);">${escapeHtml(r.response_content?.text || '')}</td>
+      <td><span class="badge-pill ${r.is_active ? 'b-approved':'b-draft'}">${r.is_active ? 'Active':'Off'}</span></td>
+      <td style="text-align:right;">
+        <button class="btn btn-ghost" style="padding:5px 10px; font-size:11.5px;" onclick="toggleKeywordRule(${r.id}, ${!r.is_active})">${r.is_active ? 'Turn off':'Turn on'}</button>
+        <button class="btn btn-ghost" style="padding:5px 10px; font-size:11.5px;" onclick="deleteKeywordRule(${r.id})">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function saveSingletonRule(triggerType){
+  const inputId = triggerType === 'welcome' ? 'auto-welcome-text' : 'auto-fallback-text';
+  const text = document.getElementById(inputId).value.trim();
+  if(!text){ showToast('Enter a message first', 'error'); return; }
+  try{
+    await api('/api/v1/auto-replies/', {
+      method:'POST',
+      body:{ trigger_type: triggerType, response_type:'text', response_content:{ text } }
+    });
+    showToast(`${triggerType === 'welcome' ? 'Welcome message':'Fallback reply'} saved`);
+    loadAutoReplies();
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+}
+
+async function saveKeywordRule(){
+  const keyword = document.getElementById('kw-keyword').value.trim();
+  const text = document.getElementById('kw-reply').value.trim();
+  if(!keyword || !text){ showModalError('keyword-modal', 'Both keyword and reply text are required'); return; }
+
+  const btn = document.getElementById('kw-save-btn');
+  btn.disabled = true;
+  try{
+    await api('/api/v1/auto-replies/', {
+      method:'POST',
+      body:{ trigger_type:'keyword', keyword, response_type:'text', response_content:{ text } }
+    });
+    closeModal('keyword-modal');
+    document.getElementById('kw-keyword').value = '';
+    document.getElementById('kw-reply').value = '';
+    showToast('Keyword rule added');
+    loadAutoReplies();
+  }catch(err){
+    showModalError('keyword-modal', err.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function toggleKeywordRule(id, newState){
+  try{
+    await api(`/api/v1/auto-replies/${id}`, { method:'PUT', body:{ is_active: newState } });
+    loadAutoReplies();
+  }catch(err){
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteKeywordRule(id){
+  if(!confirm('Delete this keyword rule?')) return;
+  try{
+    await api(`/api/v1/auto-replies/${id}`, { method:'DELETE' });
+    showToast('Rule deleted');
+    loadAutoReplies();
+  }catch(err){
+    showToast(err.message, 'error');
   }
 }
 

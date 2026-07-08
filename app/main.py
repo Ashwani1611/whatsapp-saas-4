@@ -9,7 +9,7 @@ from app.database import engine, SessionLocal
 from app.models import *  # noqa - registers all models with Base
 from app.database import Base
 from app.middleware.tenant import tenant_middleware
-from app.routers import auth, contacts, templates, campaigns, inbox, billing, webhook, admin, wa_numbers
+from app.routers import auth, contacts, templates, campaigns, inbox, billing, webhook, admin, wa_numbers, auto_replies
 
 
 
@@ -89,6 +89,7 @@ app.include_router(billing.router)
 app.include_router(webhook.router)
 app.include_router(admin.router)
 app.include_router(wa_numbers.router)
+app.include_router(auto_replies.router)
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ def serve_dashboard():
     """Serves the client dashboard SPA at the root of every client domain"""
     from fastapi.responses import FileResponse
     return FileResponse("frontend/dashboard.html")
+
 
 @app.get("/admin")
 def serve_admin_console():
